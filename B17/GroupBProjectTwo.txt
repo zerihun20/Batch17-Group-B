@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="fe60782c-c0d8-4da4-9504-846487b58156" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="hello_world_Flow" doc:id="982c5cbd-2047-41e4-83be-b83b5173b7dc" >
+		<http:listener doc:name="Listener" doc:id="62e0057a-c897-49e5-bce5-2d240fa8c182" config-ref="HTTP_Listener_config" path="/hello"/>
+		<set-payload value="#['****************'++'  '++ 'Hello World' ++'  '++ '*******************']" doc:name="Set Payload" doc:id="da42cd48-df41-4244-8473-5a36ed60d98a" />
+		<logger level="INFO" doc:name="Logger" doc:id="809876bd-9f09-4d18-a2e3-24424a304a6f" message="#[payload]"/>
+	</flow>
+	<flow doc:id="f540400a-b4d2-4157-a86c-4e88fb36730c" name="fname_lname_ageFlow">
+		<http:listener doc:name="Listener" doc:id="9f7a69d1-7056-44aa-a48c-4786c9b1cea0" config-ref="HTTP_Listener_config" path="/users/{FName}/{LName}"/>
+		<set-variable value="#[attributes.uriParams.FName]" doc:name="Set Variable" doc:id="c19559f3-6ba2-49c7-bb2f-eb21db0449ce" variableName="var1"/>
+		<set-variable value="#[attributes.uriParams.LName]" doc:name="Set Variable" doc:id="eec45a74-6066-46ac-a585-c2863ffeeed6" variableName="var2"/>
+		<set-variable value="#[attributes.queryParams.Age]" doc:name="Set Variable" doc:id="95e1314b-d275-426b-a767-6134ac863f34" variableName="var3"/>
+		<set-payload value="#['Hello' ++ ' ' ++ vars.var1  as String ++ ' ' ++ vars.var2 as String ++ '. ' ++ 'Our record show that your age is' ++ ' ' ++ vars.var3 as String ++ '. ' ++ '***Thank you!***']" doc:name="Set Payload" doc:id="51b0d7fc-22c0-4ae5-8565-b6229471ffe9" />
+	</flow>
+	<flow name="userinfo_xml_to_csv_Flow" doc:id="7a996a43-1b05-428e-95cd-398332647786">
+		<http:listener doc:name="Listener" doc:id="a6482170-89ff-4db4-9287-74cac4e8b08a" config-ref="HTTP_Listener_config" path="/info" />
+		<ee:transform doc:name="xml to csv" doc:id="f53c13b8-3a1f-40d4-b863-7d1de1b3c2f9">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/csv
+
+---
+payload.user 
+
+/*sample user info in xml as shown below is expected from postman 
+<user>
+<Fname>Haile</Fname>
+<Lname>G/selase</Lname>
+<age>35</age>
+<address>3520 Forthwashington st NW apt #3 </address>
+<city>Silverspring </city>
+<state>Maryland</state>
+<phoneno>2407898452</phoneno> 
+</user>*/
+
+
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="userinfo_xml_csvto_json_Flow" doc:id="dddd6c94-f3d4-4b04-9dce-b2d01e8abcd2" >
+		<http:listener doc:name="Listener" doc:id="34921cb9-1cdc-4d7b-b746-5d6d87ea82b4" config-ref="HTTP_Listener_config" path="/info1"/>
+		<ee:transform doc:name="xml to csv" doc:id="a2530380-3ece-428e-973a-2c593f71d486" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv
+---
+payload.user
+
+
+//The same user info similar to the flow above is expected from postman]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="2fd7613b-3d28-473d-925e-0d5bdd570509" message="#[payload]" />
+		<ee:transform doc:name="csv to json" doc:id="63c3e1a6-da94-4deb-bdd9-01842d0a0ec7" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="warning_from_mule_Flow" doc:id="c3a07c28-83bd-407a-b4c6-3c88a2a34c43">
+		<http:listener doc:name="Listener" doc:id="08cca876-31eb-49ed-a234-d43ecc9009b9" config-ref="HTTP_Listener_config" path="/mule" />
+		<set-variable doc:name="Set Variable" doc:id="409ac1cb-184d-4e5e-be95-f82e8df3fecf" variableName="warn" value="#[payload]" />
+		<set-payload doc:name="Set Payload" doc:id="1553bb36-8cbe-4891-ade5-606302338ab7" value="#['***This is a warning message from' ++ ' ' ++ vars.warn     //'mule application***' is expected from postman]" />
+	</flow>
+</mule>
