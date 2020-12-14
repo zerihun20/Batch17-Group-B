@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="5d80412a-15ff-49e7-b268-0f2e495ed95e" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="question-1-flow" doc:id="ceb40dab-c556-4ce5-b2bb-558fdec5b59d" >
+		<ee:transform doc:name="qustion1" doc:id="4b61b3fc-0b50-4cf5-b7e6-8d42d1642fb0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.user map (value,index)-> { (index):value}
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="questio2-Flow" doc:id="46d9f07c-39e8-4849-8a3e-4d6348f2f635" >
+		<ee:transform doc:name="qustion2" doc:id="1f06d09f-254b-4e59-b857-63a8a82823ee" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map (val , index) -> {
+
+	id: val.id,
+	name: "ABC -> " ++ val.itemname as String,
+	code: "Q123 -> " ++ val.itemcode as String,
+	price: val.price * 2
+
+	}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="question-1-5Flow" doc:id="4a3f1d80-1a29-4c96-a6a1-7f27af68bc54" >
+		<ee:transform doc:name="Transform Message" doc:id="9496c2e8-bb76-4948-8f4b-723ab8b6650a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="question-3Flow" doc:id="e5ec13de-de88-4f9f-b0bf-dc1cfcac2dd9" >
+		<ee:transform doc:name="qustion3" doc:id="2466fdea-e162-4622-af61-84c61c1bb84d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+
+List_of_Items:
+{
+	(payload map (val, index)->{
+
+			item @(id:val.id , itemname:val.itemname ,
+			itemcode:val.itemcode , price:val.price
+			): val.item
+
+
+	})
+}
+
+
+
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="question-4Flow json" doc:id="82307237-f0d5-46f8-b6ae-5bc6109a1f39" >
+		<ee:transform doc:name="qustion4" doc:id="fda0d91b-0d24-4257-87fa-709346edfb09" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ($.id ++ " , " ++ $.itemname ++ " , " ++ $.itemcode ++ " , " ++ $.price )
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="questionFlow4 xml" doc:id="889af47b-3c2b-43e1-a12f-6d9889cc031d" >
+		<ee:transform doc:name="qusion4 xml" doc:id="edabb8d3-a74f-4a9b-ba76-fb938bc2ff95" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+
+Allitems:{payload map ($.id ++ " , " ++ $.itemname ++ " , " ++ $.itemcode ++ " , " ++ $.price )}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="question-5Flow" doc:id="181a9c8b-59cc-49f2-971c-4c703e1cfd0d" >
+		<ee:transform doc:name="qustion.5" doc:id="95c7e0d0-c85c-4e35-892b-106f61699449" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+users: payload.user map (user, index) -> {
+      user: user mapObject (value, key) -> {
+      (upper(key)): value
+      }
+}		
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="question-6Flow" doc:id="9742a678-7cf9-4cc4-83ab-f3aff48664bd" >
+		<ee:transform doc:name="Transform Message" doc:id="3d551e77-6bd7-4551-9b82-e62f471b5851" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.employeers.*employee.empAge]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="question-7Flow" doc:id="e1d1ef13-c119-4e32-a806-cbee239469fe" >
+		<ee:transform doc:name="Transform Message" doc:id="a7952261-d0cb-4f07-b0a9-1212570c0564" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv
+var comName = "employee company: Icraftsoftwar"
+---
+payload.employees.*employee map (value, index) -> {	
+	 "Employee Full Info" : 
+		"employee Name: " ++ value.empName ++ " " ++   
+		"employee Age: " ++ value.empAge ++ " " ++   
+		"employee Salary: " ++ value.empSalary ++  " " ++  comName
+}
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
