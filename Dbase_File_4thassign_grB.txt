@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="5c63361a-bd4f-4c08-b4e0-54473174326c" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="8afb9f4f-fc24-487c-a3c3-79f05fc61311" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="B9382746!m" database="craftonlineshopping"/>
+	</db:config>
+	<db:config name="Database_Config1" doc:name="Database Config" doc:id="56b825fb-3c69-40f2-8904-84aaa369c7f1" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="B9382746!m" database="craftlocaldb" />
+	</db:config>
+	<flow name="dbase_file_1stQa" doc:id="eab80b0e-c593-47df-8c00-ab301746c4ba" >
+		<http:listener doc:name="Listener" doc:id="7e7708dd-5e7c-4e80-8b1a-1b6c8e8aed45" config-ref="HTTP_Listener_config" path="/db"/>
+		<ee:transform doc:name="Transform Message" doc:id="d6b82e17-0538-459a-a4e6-b15ee284aa84" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map (value, index)->{
+	orderid: value.orderid,
+    orderdate: value.orderdate,
+	orderproduct: value.orderproduct,
+    modified: value.modified,
+    status: value.status,
+    amount: value.amount  
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:bulk-insert doc:name="Bulk insert" doc:id="ceabd6f4-4295-4e99-850a-ac1ac1ee546f" config-ref="Database_Config">
+			<db:sql ><![CDATA[ insert into `orders` (`orderid`, `orderdate`, `orderproduct`, `modified`, `status`, `amount`)
+value (null,:orderdate,:orderproduct ,:modified,:status,:amount); ]]></db:sql>
+		</db:bulk-insert>
+		<ee:transform doc:name="Transform Message" doc:id="048cc3be-2fa3-41e7-9dc2-b2e116a79bfe" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Inserted successfully"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dbase_file_1stQb" doc:id="89fab8d5-795f-4346-a833-52334315120c">
+		<http:listener doc:name="Listener" doc:id="bd28a9cb-41b0-4c53-adb4-89007acb62be" config-ref="HTTP_Listener_config" path="/dba" />
+		<db:select doc:name="Select" doc:id="5ed5bc82-410c-41a1-a873-eba55f8b1331" config-ref="Database_Config">
+			<db:sql><![CDATA[SELECT * FROM craftonlineshopping.products;]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="map &amp; filter" doc:id="fdc6a0d9-1b12-4548-a943-982a8cba5376" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map {
+	  prodid: $.prodid,
+      categoryid: $.categoryid,
+      name: $.name,
+      description: $.description,
+      video_url: $.video_url,
+      price: $.price
+} filter ((value, index) ->value.price>5000 )
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:bulk-insert doc:name="Bulk insert" doc:id="b0bc2eea-d5e8-40c3-9503-50eae52a342e" config-ref="Database_Config1">
+			<db:sql><![CDATA[insert into `products` (`prodid`, `categoryid`, `name` , `description`,`video_url`,`price`)
+value (null,:categoryid,:name ,:description,:video_url,:price);
+]]></db:sql>
+		</db:bulk-insert>
+		<set-payload value="#['products are successfully filtered and added to local DB ']" doc:name="Set Payload" doc:id="e2c9f716-8bb2-4683-95e1-5d86f851c07a" />
+	</flow>
+	<flow name="dbase_file_2dQ" doc:id="e6c39616-7cfc-4a86-9a41-d3eaf5669783" >
+		<http:listener doc:name="Listener" doc:id="73605f65-9df5-4aff-9936-b375377f929b" config-ref="HTTP_Listener_config" path="/dbb"/>
+		<choice doc:name="Choice" doc:id="731a4780-ea8d-4c61-abdd-26afedb3141e" >
+			<when expression='#[attributes.queryParams.varp=="product"]'>
+				<db:select doc:name="products" doc:id="3478b36e-6aac-47dc-a9a9-b73f7df90c3c" config-ref="Database_Config">
+			<db:sql><![CDATA[SELECT * FROM craftonlineshopping.products;]]></db:sql>
+		</db:select>
+			</when>
+			<when expression='#[attributes.queryParams.varu=="user"]'>
+				<db:select doc:name="users" doc:id="f837deba-9ec0-45e3-a991-ad65d002500a" config-ref="Database_Config">
+			<db:sql><![CDATA[SELECT * FROM craftonlineshopping.users;]]></db:sql>
+		</db:select>
+			</when>
+			<otherwise >
+				<set-payload value="#['Data is unavailable']" doc:name="Set Payload" doc:id="709fa72e-3a06-4281-8b34-ff54a49e4d69" />
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="6eb7b5b4-0815-4bd8-8be2-7dfcb48236e0">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		
+		
+	</flow>
+	<flow name="dbase_file_3rdQ" doc:id="3b6b1d2d-2d76-4e9b-ae47-a67c29d6137b" >
+		<http:listener doc:name="Listener" doc:id="c6af2bf4-f548-4fab-8a16-1560455f3905" config-ref="HTTP_Listener_config" path="/dbc"/>
+		<db:select doc:name="Select" doc:id="8aacf7d1-030a-448a-98f1-c6fe9e19b59b" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM craftonlineshopping.orders;]]></db:sql>
+		</db:select>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="a301fea2-f5cd-4112-ae59-eb92c779c851" >
+			<route >
+				<ee:transform doc:name="Transform Message" doc:id="91068e5d-f716-4505-bd9e-56628447d47f" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+payload filter ($.amount>5000) groupBy ($.status)]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<file:write doc:name="Write" doc:id="07a80dbe-e42e-4d7f-b586-eb83450f1da9" path="C:\Users\zs204\Desktop\DBAssign\greaterthan5k.txt" mode="APPEND"/>
+			</route>
+			<route >
+				<ee:transform doc:name="Transform Message" doc:id="4ecc9963-ce79-4451-99ff-d4148bb54e87" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload filter ($.amount<5000) groupBy ($.status)]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<file:write doc:name="Write" doc:id="65cff7e9-bba5-47aa-9b01-e2ddee32e3a6" path="C:\Users\zs204\Desktop\DBAssign1\lessthan5k.txt"/>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="4b4e7039-7627-482a-b852-5938fa916aef" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Items are Successfully Filtered & Written"  
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dbase_file_4thQ" doc:id="d3d1ffbe-c3a9-4acc-a55b-1b5cfece11a0">
+		<http:listener doc:name="Listener" doc:id="a9914bf2-103c-40ab-b0db-f2cc76354c74" config-ref="HTTP_Listener_config" path="/dbd" />
+		<set-variable value="#[attributes.queryParams.num]" doc:name="Set Variable" doc:id="b2e00162-8862-473e-a548-781762c7f49d" variableName="varch" />
+		<choice doc:name="Choice" doc:id="88c8a157-85c7-488b-b447-14785d0eef8a">
+			<when expression="#[vars.varch&gt;10]">
+				<set-payload doc:name="Set Payload" doc:id="e0338a0f-1629-4e60-93f3-08817a789387" value="#['num is greater than 10']" />
+			</when>
+			<when expression="#[vars.varch&lt;10]" >
+				<ee:transform doc:name="Transform Message" doc:id="154d35e3-7cde-4c9f-9e15-8529f86cfb5f">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+if (vars.varch~=1) {
+	"message": "num is 1"
+} else 
+{
+	"message":'num is less than 10'
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise>
+				<set-payload value="#['num is equal 10']" doc:name="Set Payload" doc:id="02762602-b5c9-4644-9053-9aa4d7ab7dd6" />
+			</otherwise>
+		</choice>
+	</flow>
+</mule>
